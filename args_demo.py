@@ -10,7 +10,7 @@ args.data_path = 'ETTh1.csv' # data file
 args.features = 'MS' # forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
 args.target = 'OT' # target feature in S or MS task
 args.freq = 'h' # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h
-args.checkpoints = './informer_checkpoints' # location of model checkpoints
+# args.checkpoints = './informer_checkpoints' # location of model checkpoints
 
 args.seq_len = 30*24           # input sequence length of Informer encoder
 args.label_len = 7*24      # start token length of Informer decoder
