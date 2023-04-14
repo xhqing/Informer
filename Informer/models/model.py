@@ -2,11 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils.masking import TriangularCausalMask, ProbMask
-from models.encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack
-from models.decoder import Decoder, DecoderLayer
-from models.attn import FullAttention, ProbAttention, AttentionLayer
-from models.embed import DataEmbedding
+from Informer.utils.masking import TriangularCausalMask, ProbMask
+from Informer.models.encoder import Encoder, EncoderLayer, ConvLayer, EncoderStack
+from Informer.models.decoder import Decoder, DecoderLayer
+from Informer.models.attn import FullAttention, ProbAttention, AttentionLayer
+from Informer.models.embed import DataEmbedding
 
 class Informer(nn.Module):
     def __init__(self, enc_in, dec_in, c_out, seq_len, label_len, out_len, 

@@ -1,9 +1,9 @@
-from data.data_loader import Dataset_ETT_hour, Dataset_ETT_minute, Dataset_Custom, Dataset_Pred
-from exp.exp_basic import Exp_Basic
-from models.model import Informer, InformerStack
+from Informer.data.data_loader import Dataset_Custom, Dataset_Pred
+from Informer.exp.exp_basic import Exp_Basic
+from Informer.models.model import Informer, InformerStack
 
-from utils.tools import EarlyStopping, adjust_learning_rate
-from utils.metrics import metric
+from Informer.utils.tools import EarlyStopping, adjust_learning_rate
+from Informer.utils.metrics import metric
 
 import numpy as np
 
@@ -60,17 +60,7 @@ class Exp_Informer(Exp_Basic):
     def _get_data(self, flag):
         args = self.args
 
-        data_dict = {
-            'ETTh1':Dataset_ETT_hour,
-            'ETTh2':Dataset_ETT_hour,
-            'ETTm1':Dataset_ETT_minute,
-            'ETTm2':Dataset_ETT_minute,
-            'WTH':Dataset_Custom,
-            'ECL':Dataset_Custom,
-            'Solar':Dataset_Custom,
-            'custom':Dataset_Custom,
-        }
-        Data = data_dict[self.args.data]
+        Data = Dataset_Custom
         timeenc = 0 if args.embed!='timeF' else 1
 
         if flag == 'test':
@@ -80,6 +70,7 @@ class Exp_Informer(Exp_Basic):
             Data = Dataset_Pred
         else:
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
+        
         data_set = Data(
             root_path=args.root_path,
             data_path=args.data_path,
@@ -93,6 +84,7 @@ class Exp_Informer(Exp_Basic):
             cols=args.cols
         )
         print(flag, len(data_set))
+        
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,

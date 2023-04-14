@@ -1,3 +1,4 @@
+import Informer
 from Informer.utils.tools import dotdict
 from Informer.exp.exp_informer import Exp_Informer
 import torch

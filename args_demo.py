@@ -1,12 +1,11 @@
-from utils.tools import dotdict
+from Informer.utils.tools import dotdict
 import torch
 
 args = dotdict()
 
 args.model = 'informer' # model of experiment, options: [informer, informerstack, informerlight(TBD)]
 
-args.data = 'custom' # data
-args.root_path = '../' # root path of data file
+args.root_path = './' # root path of data file
 args.data_path = 'ETTh1.csv' # data file
 args.features = 'MS' # forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
 args.target = 'OT' # target feature in S or MS task
