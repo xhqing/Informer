@@ -19,17 +19,17 @@ def set_random_seed(seed, deterministic=False):
 if __name__ == "__main__":
     # set_random_seed(0)
 
-    for i in range(args.itr):
-        models_location = f"./informer_checkpoints/{i}"
-        exp = Exp(args)
+    best_model_path = f"informer_models/{0}_{0}.pth"
     
-        print('>>>>>> start training: ')
-        exp.train(models_location)
+    exp = Exp(args)
+    
+    print('>>>>>> start training: >>>>>>')
+    exp.train(best_model_path)
 
-        print('>>>>>> testing: ')
-        exp.test(models_location)
+    print('>>>>>> testing: >>>>>>')
+    exp.test(best_model_path)
 
-        torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
 
 
 

@@ -26,11 +26,11 @@ class EarlyStopping:
         self.val_loss_min = np.Inf
         self.delta = delta
 
-    def __call__(self, val_loss, model, path):
+    def __call__(self, val_loss, model, best_model_path):
         score = -val_loss
         if self.best_score is None:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            self.save_checkpoint(val_loss, model, best_model_path)
         elif score < self.best_score + self.delta:
             self.counter += 1
             print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
@@ -38,13 +38,13 @@ class EarlyStopping:
                 self.early_stop = True
         else:
             self.best_score = score
-            self.save_checkpoint(val_loss, model, path)
+            self.save_checkpoint(val_loss, model, best_model_path)
             self.counter = 0
 
-    def save_checkpoint(self, val_loss, model, path):
+    def save_checkpoint(self, val_loss, model, best_model_path):
         if self.verbose:
             print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving model ...')
-        torch.save(model.state_dict(), path+'/'+'checkpoint.pth')
+        torch.save(model.state_dict(), best_model_path)
         self.val_loss_min = val_loss
 
 class dotdict(dict):

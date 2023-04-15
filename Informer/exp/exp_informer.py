@@ -113,11 +113,12 @@ class Exp_Informer(Exp_Basic):
         self.model.train()
         return total_loss
 
-    def train(self, path):
+    def train(self, best_model_path):
         train_data, train_loader = self._get_data(flag = 'train')
         vali_data, vali_loader = self._get_data(flag = 'val')
         test_data, test_loader = self._get_data(flag = 'test')
 
+        path = "/".join(best_model_path.split("/")[:-1])
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -171,14 +172,13 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss, test_loss))
 
-            early_stopping(vali_loss, self.model, path)
+            early_stopping(vali_loss, self.model, best_model_path)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
             
-        best_model_path = path+'/'+'checkpoint.pth'
         self.model.load_state_dict(torch.load(best_model_path))
         
         return self.model
