@@ -83,7 +83,6 @@ class Exp_Informer(Exp_Basic):
             freq=freq,
             cols=args.cols
         )
-        print(flag, len(data_set))
         
         data_loader = DataLoader(
             data_set,
@@ -183,7 +182,9 @@ class Exp_Informer(Exp_Basic):
         
         return self.model
 
-    def test(self, setting):
+    def test(self):
+        """test test_data """
+
         test_data, test_loader = self._get_data(flag='test')
         
         self.model.eval()
@@ -199,24 +200,12 @@ class Exp_Informer(Exp_Basic):
 
         preds = np.array(preds)
         trues = np.array(trues)
-        print('test shape:', preds.shape, trues.shape)
+        
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         trues = trues.reshape(-1, trues.shape[-2], trues.shape[-1])
-        print('test shape:', preds.shape, trues.shape)
-
-        # result save
-        folder_path = './results/' + setting +'/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
 
         mae, mse, rmse, mape, mspe = metric(preds, trues)
-        print('mse:{}, mae:{}'.format(mse, mae))
-
-        np.save(folder_path+'metrics.npy', np.array([mae, mse, rmse, mape, mspe]))
-        np.save(folder_path+'pred.npy', preds)
-        np.save(folder_path+'true.npy', trues)
-
-        return
+        print(f'mse: {mse}, mae: {mae}, rmse: {rmse}, mape: {mape}, mspe: {mspe}')
 
     def predict(self, setting, load=False):
         pred_data, pred_loader = self._get_data(flag='pred')

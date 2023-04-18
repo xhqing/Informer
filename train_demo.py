@@ -27,7 +27,7 @@ if __name__ == "__main__":
     exp.train(best_model_path)
 
     print('>>>>>> testing: >>>>>>')
-    exp.test(best_model_path)
+    exp.test()
 
     torch.cuda.empty_cache()
 
