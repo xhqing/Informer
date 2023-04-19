@@ -58,9 +58,9 @@ class Exp_Informer(Exp_Basic):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
 
-    def _get_data(self, data, task: str):
+    def _get_dataloader(self, data, task: str):
         """
-        task in ['train','test','pred']
+        task in ['train', 'val', 'test']
         """
         args = self.args
 
@@ -68,10 +68,7 @@ class Exp_Informer(Exp_Basic):
 
         if task == 'test':
             shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
-        elif task == 'pred':
-            shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
-            Data = Dataset_Pred
-        else:
+        elif task in ['train','val']:
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
         
         data_set = Data(data)
@@ -82,7 +79,7 @@ class Exp_Informer(Exp_Basic):
             num_workers=args.num_workers,
             drop_last=drop_last)
 
-        return data_set, data_loader
+        return data_loader
 
     def _select_optimizer(self):
         model_optim = optim.Adam(self.model.parameters(), lr=self.args.learning_rate)
@@ -92,11 +89,11 @@ class Exp_Informer(Exp_Basic):
         criterion =  nn.MSELoss()
         return criterion
 
-    def vali(self, vali_data, vali_loader, criterion):
+    def vali(self, vali_loader, criterion):
         self.model.eval()
         total_loss = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
-            pred, true = self._process_one_batch(vali_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+            pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
             loss = criterion(pred.detach().cpu(), true.detach().cpu())
             total_loss.append(loss)
         total_loss = np.average(total_loss)
@@ -104,8 +101,8 @@ class Exp_Informer(Exp_Basic):
         return total_loss
 
     def train(self, train_data, val_data, model_save_path):
-        train_data, train_loader = self._get_data(train_data, "train")
-        vali_data, vali_loader = self._get_data(val_data, "val")
+        train_loader = self._get_dataloader(train_data, "train")
+        vali_loader = self._get_dataloader(val_data, "val")
 
         path = "/".join(model_save_path.split("/")[:-1])
         if not os.path.exists(path):
@@ -132,7 +129,7 @@ class Exp_Informer(Exp_Basic):
                 iter_count += 1
                 
                 model_optim.zero_grad()
-                pred, true = self._process_one_batch(train_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+                pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
                 loss = criterion(pred, true)
                 train_loss.append(loss.item())
                 
@@ -155,7 +152,7 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
 
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_data, vali_loader, criterion)
+            vali_loss = self.vali(vali_loader, criterion)
 
             print("Epoch: {0}, Steps: {1} | Train Loss(mse): {2:.7f} Vali Loss(mse): {3:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss))
@@ -174,16 +171,15 @@ class Exp_Informer(Exp_Basic):
     def test(self, test_data):
         """test test_data """
 
-        test_data, test_loader = self._get_data(test_data, 'test')
+        test_loader = self._get_dataloader(test_data, 'test')
         
         self.model.eval()
         
         preds = []
         trues = []
         
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(test_loader):
-            pred, true = self._process_one_batch(
-                test_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
+        for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
+            pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
 
@@ -196,36 +192,24 @@ class Exp_Informer(Exp_Basic):
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print(f'mse: {mse}, mae: {mae}, rmse: {rmse}, mape: {mape}, mspe: {mspe}')
 
-    def predict(self, setting, load=False):
-        pred_data, pred_loader = self._get_data(flag='pred')
+    def predict(self, pred_data, model_save_path):
         
-        if load:
-            path = os.path.join(self.args.checkpoints, setting)
-            best_model_path = path+'/'+'checkpoint.pth'
-            self.model.load_state_dict(torch.load(best_model_path))
+        self.model.load_state_dict(torch.load(model_save_path))
 
         self.model.eval()
         
         preds = []
-        
-        for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(pred_loader):
-            pred, true = self._process_one_batch(
-                pred_data, batch_x, batch_y, batch_x_mark, batch_y_mark)
-            preds.append(pred.detach().cpu().numpy())
+
+        seq_x, seq_y, seq_x_mark, seq_y_mark = pred_data[0], pred_data[1], pred_data[2], pred_data[3]
+        pred, _ = self._process_one_batch(seq_x, seq_y, seq_x_mark, seq_y_mark)
+        preds.append(pred.detach().cpu().numpy())
 
         preds = np.array(preds)
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         
-        # result save
-        folder_path = './results/' + setting +'/'
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        
-        np.save(folder_path+'real_prediction.npy', preds)
-        
-        return
+        return preds
 
-    def _process_one_batch(self, dataset_object, batch_x, batch_y, batch_x_mark, batch_y_mark):
+    def _process_one_batch(self, batch_x, batch_y, batch_x_mark, batch_y_mark):
         batch_x = batch_x.float().to(self.device)
         batch_y = batch_y.float()
 
@@ -238,6 +222,7 @@ class Exp_Informer(Exp_Basic):
         elif self.args.padding==1:
             dec_inp = torch.ones([batch_y.shape[0], self.args.pred_len, batch_y.shape[-1]]).float()
         dec_inp = torch.cat([batch_y[:,:self.args.label_len,:], dec_inp], dim=1).float().to(self.device)
+        
         # encoder - decoder
         if self.args.use_amp:
             with torch.cuda.amp.autocast():

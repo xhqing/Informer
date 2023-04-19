@@ -29,7 +29,7 @@ if __name__ == "__main__":
     
     exp = Exp_Informer(args)
     
-    print('>>>>>> start training: >>>>>>')
+    print('>>>>>> training: >>>>>>')
     exp.train(train_data, val_data, model_save_path)
 
     print(">>>>>>>>>>> testing: >>>>>>>")
@@ -37,7 +37,13 @@ if __name__ == "__main__":
     exp.test(test_data)
 
     torch.cuda.empty_cache()
-
+    
+    print(">>>>>>>> predicting >>>>>>>>")
+    pred_data = prepare_data("pred")
+    model_save_path = f"informer_models/{0}_{0}.pth"
+    exp = Exp_Informer(args)
+    preds = exp.predict(pred_data, model_save_path)
+    print(preds)
 
 
 
