@@ -1,4 +1,4 @@
-from Informer.data_loader import Dataset_Custom, Dataset_Pred
+from Informer.dataset import Dataset_Custom
 
 from Informer.exp.exp_basic import Exp_Basic
 from Informer.models.model import Informer, InformerStack
@@ -58,33 +58,23 @@ class Exp_Informer(Exp_Basic):
             model = nn.DataParallel(model, device_ids=self.args.device_ids)
         return model
 
-    def _get_data(self, flag):
+    def _get_data(self, data, task: str):
+        """
+        task in ['train','test','pred']
+        """
         args = self.args
 
         Data = Dataset_Custom
-        timeenc = 0 if args.embed!='timeF' else 1
 
-        if flag == 'test':
+        if task == 'test':
             shuffle_flag = False; drop_last = True; batch_size = args.batch_size; freq=args.freq
-        elif flag=='pred':
+        elif task == 'pred':
             shuffle_flag = False; drop_last = False; batch_size = 1; freq=args.detail_freq
             Data = Dataset_Pred
         else:
             shuffle_flag = True; drop_last = True; batch_size = args.batch_size; freq=args.freq
         
-        data_set = Data(
-            root_path=args.root_path,
-            data_path=args.data_path,
-            flag=flag,
-            size=[args.seq_len, args.label_len, args.pred_len],
-            features=args.features,
-            target=args.target,
-            inverse=args.inverse,
-            timeenc=timeenc,
-            freq=freq,
-            cols=args.cols
-        )
-        
+        data_set = Data(data)
         data_loader = DataLoader(
             data_set,
             batch_size=batch_size,
@@ -113,12 +103,11 @@ class Exp_Informer(Exp_Basic):
         self.model.train()
         return total_loss
 
-    def train(self, best_model_path):
-        train_data, train_loader = self._get_data(flag = 'train')
-        vali_data, vali_loader = self._get_data(flag = 'val')
-        test_data, test_loader = self._get_data(flag = 'test')
+    def train(self, train_data, val_data, model_save_path):
+        train_data, train_loader = self._get_data(train_data, "train")
+        vali_data, vali_loader = self._get_data(val_data, "val")
 
-        path = "/".join(best_model_path.split("/")[:-1])
+        path = "/".join(model_save_path.split("/")[:-1])
         if not os.path.exists(path):
             os.makedirs(path)
 
@@ -148,7 +137,7 @@ class Exp_Informer(Exp_Basic):
                 train_loss.append(loss.item())
                 
                 if (i+1) % 100==0:
-                    print("\titers: {0}, epoch: {1} | loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
+                    print("\titers: {0}, epoch: {1} | mse loss: {2:.7f}".format(i + 1, epoch + 1, loss.item()))
                     speed = (time.time()-time_now)/iter_count
                     left_time = speed*((self.args.train_epochs - epoch)*train_steps - i)
                     print('\tspeed: {:.4f}s/iter; left time: {:.4f}s'.format(speed, left_time))
@@ -167,26 +156,25 @@ class Exp_Informer(Exp_Basic):
 
             train_loss = np.average(train_loss)
             vali_loss = self.vali(vali_data, vali_loader, criterion)
-            test_loss = self.vali(test_data, test_loader, criterion)
 
-            print("Epoch: {0}, Steps: {1} | Train Loss: {2:.7f} Vali Loss: {3:.7f} Test Loss: {4:.7f}".format(
-                epoch + 1, train_steps, train_loss, vali_loss, test_loss))
+            print("Epoch: {0}, Steps: {1} | Train Loss(mse): {2:.7f} Vali Loss(mse): {3:.7f}".format(
+                epoch + 1, train_steps, train_loss, vali_loss))
 
-            early_stopping(vali_loss, self.model, best_model_path)
+            early_stopping(vali_loss, self.model, model_save_path)
             if early_stopping.early_stop:
                 print("Early stopping")
                 break
 
             adjust_learning_rate(model_optim, epoch+1, self.args)
             
-        self.model.load_state_dict(torch.load(best_model_path))
+        self.model.load_state_dict(torch.load(model_save_path))
         
         return self.model
 
-    def test(self):
+    def test(self, test_data):
         """test test_data """
 
-        test_data, test_loader = self._get_data(flag='test')
+        test_data, test_loader = self._get_data(test_data, 'test')
         
         self.model.eval()
         
@@ -262,8 +250,7 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
-        if self.args.inverse:
-            outputs = dataset_object.inverse_transform(outputs)
+        
         f_dim = -1 if self.args.features=='MS' else 0
         batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
 

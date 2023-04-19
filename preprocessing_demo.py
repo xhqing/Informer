@@ -3,22 +3,22 @@ from args_demo import args
 from Informer.utils.tools import StandardScaler
 from Informer.utils.timefeatures import time_features
 
-import torch
 from torch.utils.data import Dataset, DataLoader
-
 import pandas as pd
 import numpy as np
 import os
 
 class Preprocessing(Dataset):
 
-    def __init__(self, flag='train', timeenc=0):
+    def __init__(self, flag='train'):
         
         assert flag in ['train', 'val', 'test']
         type_map = {'train': 0, 'val': 1, 'test': 2}
         self.set_type = type_map[flag]
-        
+
+        timeenc = 0 if args.embed!='timeF' else 1
         self.timeenc = timeenc
+        
         self.__read_data__()
 
     def __read_data__(self):
@@ -58,10 +58,7 @@ class Preprocessing(Dataset):
         data_stamp = time_features(df_stamp, timeenc=self.timeenc, freq=args.freq)
 
         self.data_x = data[border1:border2]
-        if args.inverse:
-            self.data_y = df_data.values[border1:border2]
-        else:
-            self.data_y = data[border1:border2]
+        self.data_y = data[border1:border2]
         self.data_stamp = data_stamp
 
     def __getitem__(self, index):
@@ -72,10 +69,7 @@ class Preprocessing(Dataset):
         r_end = r_begin + args.label_len + args.pred_len
 
         seq_x = self.data_x[s_begin:s_end]
-        if args.inverse:
-            seq_y = np.concatenate([self.data_x[r_begin:r_begin+args.label_len], self.data_y[r_begin+args.label_len:r_end]], 0)
-        else:
-            seq_y = self.data_y[r_begin:r_end]
+        seq_y = self.data_y[r_begin:r_end]
 
         seq_x_mark = self.data_stamp[s_begin:s_end]
         seq_y_mark = self.data_stamp[r_begin:r_end]
@@ -86,12 +80,14 @@ class Preprocessing(Dataset):
     def __len__(self):
         return len(self.data_x) - args.seq_len - args.pred_len + 1
 
+def prepare_data(task: str) -> tuple:
+    """
+    task in ['train','test','val']
+    """
+    dataset = Preprocessing(task)
+    dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=False)
+    for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
+        data = (batch_x, batch_y, batch_x_mark, batch_y_mark)
 
-dataset = Preprocessing("test")
-dataloader = DataLoader(dataset, batch_size=len(dataset), shuffle=True)
-for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
-    import pdb; pdb.set_trace()
-    print(batch)
-
-
+    return data
 

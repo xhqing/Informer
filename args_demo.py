@@ -17,7 +17,7 @@ args.label_len = 7*24      # start token length of Informer decoder
 args.pred_len = 24                # prediction sequence length
 # Informer decoder input: concat[start token series(label_len), zero padding series(pred_len)]
 
-args.inverse = True
+# args.inverse = True
 
 args.enc_in = 7   # encoder input size
 args.dec_in = 7   # decoder input size
