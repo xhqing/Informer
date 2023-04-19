@@ -7,6 +7,7 @@ args.model = 'informer' # model of experiment, options: [informer, informerstack
 
 args.root_path = './' # root path of data file
 args.data_path = 'ETTh1.csv' # data file
+args.scale = True
 args.features = 'MS' # forecasting task, options:[M, S, MS]; M:multivariate predict multivariate, S:univariate predict univariate, MS:multivariate predict univariate
 args.target = 'OT' # target feature in S or MS task
 args.freq = 'h' # freq for time features encoding, options:[s:secondly, t:minutely, h:hourly, d:daily, b:business days, w:weekly, m:monthly], you can also use more detailed freq like 15min or 3h

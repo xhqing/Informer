@@ -3,11 +3,5 @@ url = "https://pypi.douban.com/simple"
 verify_ssl = true
 name = "pypi"
 
-[packages]
-numpy = "*"
-torch = "*"
-
-[dev-packages]
-
 [requires]
 python_version = "3.9.12"
