@@ -10,6 +10,7 @@ pipx install pipenv
 
 ## run demo
 ```sh
+pipenv --python path/to/python
 pipenv install
 pipenv run python run_demo.py
 ```
