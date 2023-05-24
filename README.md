@@ -20,3 +20,6 @@ Most probably you are familiar with Conda and requirements.txt. Adviced Python v
 ```sh
 python run_demo.py
 ```
+
+## Source Repo
+https://github.com/zhouhaoyi/Informer2020
