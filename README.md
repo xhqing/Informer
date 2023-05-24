@@ -1,4 +1,4 @@
-# Informer
+# Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper)
 
 ## Virtual Environment and Dependencies Installation
 
