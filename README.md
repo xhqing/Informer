@@ -5,7 +5,7 @@ An easy-to-use implementation.
 ## Source Repo
 https://github.com/zhouhaoyi/Informer2020                                      
 
-## Virtual Environment and Dependencies Installation
+## Python Virtual Environment and Dependencies Installation
 
 ### Using Pipenv
 
@@ -22,6 +22,14 @@ pipx install pipenv
 Most probably you are familiar with Conda and requirements.txt. Adviced Python version is: 3.9.12 when using Conda creating Python virtual environment.
 
 ## Run demo
+
+### Required Resources
+ The demo file can run smoothly on the following resources:
+ - Ubuntu: Ubuntu 18.04.6 LTS x86_64, CUDA: 11.8 
+ - Mac(M1/Intel)
+
+### Running Demo File
+Simple as follows:
 ```sh
 python run_demo.py
 ```
