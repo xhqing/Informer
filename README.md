@@ -1,4 +1,9 @@
-# Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper)
+# Informer: Beyond Efficient Transformer for Long Sequence Time-Series Forecasting (AAAI'21 Best Paper) 
+
+An easy-to-use implementation.
+
+## Source Repo
+https://github.com/zhouhaoyi/Informer2020                                      
 
 ## Virtual Environment and Dependencies Installation
 
@@ -20,6 +25,3 @@ Most probably you are familiar with Conda and requirements.txt. Adviced Python v
 ```sh
 python run_demo.py
 ```
-
-## Source Repo
-https://github.com/zhouhaoyi/Informer2020
