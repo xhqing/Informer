@@ -26,7 +26,7 @@ Most probably you are familiar with Conda and requirements.txt. Adviced Python v
 ### Required Resources
  The demo file can run smoothly on the following resources:
  - Ubuntu 18.04.6 LTS, x86_64, CPU only; 
- - Ubuntu 18.04.6 LTS, x86_64, NVIDIA Tesla V100 SXM2 16GB with CUDA 11.8 (Recommendation)
+ - Ubuntu 18.04.6 LTS, x86_64, NVIDIA Tesla V100 SXM2 16GB with CUDA 11.8 (Recommended)
 
 ### Running Demo File
 Simple as follows:
