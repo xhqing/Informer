@@ -5,31 +5,19 @@ An easy-to-use implementation.
 ## Source Repo
 https://github.com/zhouhaoyi/Informer2020                                      
 
-## Python Virtual Environment and Dependencies Installation
+## Resources
+ - Ubuntu 18.04.6 LTS, x86_64, CPU only; 
+ - Ubuntu 18.04.6 LTS, x86_64, NVIDIA Tesla V100 SXM2 16GB with CUDA 11.8
+ - Ubuntu 18.04.6 LTS, x86_64, NVIDIA Tesla V100 SXM2 32GB with CUDA 11.8
 
-### Using Pipenv
-
-If you familiar with Pipenv usage, you can choose Pipenv to install virtual environment and dependencies according to Pipfile and Pipfile.lock.
-
-Note: In this project Pipenv version used is 2023.4.29. You may need pipx version >= 1.1.0 to install latest or spesific version of pipenv in Ubuntu. Using pipx install pipenv simple as follows: 
-
+## Environment
 ```sh
-pipx install pipenv
+conda create --name py3912 python=3.9.12
+conda activate py3912
+pip install -r requirements.txt
 ```
 
-### Using Conda and requirements.txt
-
-Most probably you are familiar with Conda and requirements.txt. Adviced Python version is 3.9.12 when using Conda creating Python virtual environment.
-
-## Run demo
-
-### Required Resources
- The demo file can run smoothly on the following resources:
- - Ubuntu 18.04.6 LTS, x86_64, CPU only; 
- - Ubuntu 18.04.6 LTS, x86_64, NVIDIA Tesla V100 SXM2 16GB with CUDA 11.8 (Recommended)
-
-### Running Demo File
-Simple as follows:
+## Demo
 ```sh
 python run_demo.py
 ```

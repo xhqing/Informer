@@ -1,18 +1,14 @@
 from Informer.dataset import Dataset_Custom
-
 from Informer.exp.exp_basic import Exp_Basic
 from Informer.models.model import Informer, InformerStack
-
 from Informer.utils.tools import EarlyStopping, adjust_learning_rate
 from Informer.utils.metrics import metric
 
 import numpy as np
-
 import torch
 import torch.nn as nn
 from torch import optim
 from torch.utils.data import DataLoader
-
 import os
 import time
 
@@ -89,18 +85,27 @@ class Exp_Informer(Exp_Basic):
         criterion =  nn.MSELoss()
         return criterion
 
-    def vali(self, vali_loader, criterion):
+    def vali(self, vali_loader, val_dataset, criterion):
         self.model.eval()
         total_loss = []
         for i, (batch_x,batch_y,batch_x_mark,batch_y_mark) in enumerate(vali_loader):
-            pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
+            pred, true = self._process_one_batch(val_dataset, batch_x, batch_y, batch_x_mark, batch_y_mark)
             loss = criterion(pred.detach().cpu(), true.detach().cpu())
             total_loss.append(loss)
         total_loss = np.average(total_loss)
         self.model.train()
         return total_loss
 
-    def train(self, train_data, val_data, model_save_path):
+    def train(self, train_dataset, val_dataset, model_save_path):
+
+        dataloader = DataLoader(train_dataset, batch_size=len(train_dataset), shuffle=False)
+        for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
+            train_data = (batch_x, batch_y, batch_x_mark, batch_y_mark)
+
+        dataloader = DataLoader(val_dataset, batch_size=len(val_dataset), shuffle=False)
+        for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
+            val_data = (batch_x, batch_y, batch_x_mark, batch_y_mark)
+
         train_loader = self._get_dataloader(train_data, "train")
         vali_loader = self._get_dataloader(val_data, "val")
 
@@ -129,7 +134,7 @@ class Exp_Informer(Exp_Basic):
                 iter_count += 1
                 
                 model_optim.zero_grad()
-                pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
+                pred, true = self._process_one_batch(train_dataset, batch_x, batch_y, batch_x_mark, batch_y_mark)
                 loss = criterion(pred, true)
                 train_loss.append(loss.item())
                 
@@ -152,7 +157,7 @@ class Exp_Informer(Exp_Basic):
             print("Epoch: {} cost time: {}".format(epoch+1, time.time()-epoch_time))
 
             train_loss = np.average(train_loss)
-            vali_loss = self.vali(vali_loader, criterion)
+            vali_loss = self.vali(vali_loader, val_dataset, criterion)
 
             print("Epoch: {0}, Steps: {1} | Train Loss(mse): {2:.7f} Vali Loss(mse): {3:.7f}".format(
                 epoch + 1, train_steps, train_loss, vali_loss))
@@ -168,8 +173,12 @@ class Exp_Informer(Exp_Basic):
         
         return self.model
 
-    def test(self, test_data):
+    def test(self, test_dataset):
         """test test_data """
+
+        dataloader = DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=False)
+        for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
+            test_data = (batch_x, batch_y, batch_x_mark, batch_y_mark)
 
         test_loader = self._get_dataloader(test_data, 'test')
         
@@ -179,7 +188,7 @@ class Exp_Informer(Exp_Basic):
         trues = []
         
         for i, (batch_x, batch_y, batch_x_mark, batch_y_mark) in enumerate(test_loader):
-            pred, true = self._process_one_batch(batch_x, batch_y, batch_x_mark, batch_y_mark)
+            pred, true = self._process_one_batch(test_dataset, batch_x, batch_y, batch_x_mark, batch_y_mark)
             preds.append(pred.detach().cpu().numpy())
             trues.append(true.detach().cpu().numpy())
 
@@ -192,7 +201,7 @@ class Exp_Informer(Exp_Basic):
         mae, mse, rmse, mape, mspe = metric(preds, trues)
         print(f'mse: {mse}, mae: {mae}, rmse: {rmse}, mape: {mape}, mspe: {mspe}')
 
-    def predict(self, pred_data, model_save_path):
+    def predict(self, pred_dataset, model_save_path):
         
         self.model.load_state_dict(torch.load(model_save_path))
 
@@ -200,16 +209,22 @@ class Exp_Informer(Exp_Basic):
         
         preds = []
 
+        dataloader = DataLoader(pred_dataset, batch_size=len(pred_dataset), shuffle=False)
+        for batch_x, batch_y, batch_x_mark, batch_y_mark in dataloader:
+            pred_data = (batch_x, batch_y, batch_x_mark, batch_y_mark)
+
         seq_x, seq_y, seq_x_mark, seq_y_mark = pred_data[0], pred_data[1], pred_data[2], pred_data[3]
-        pred, _ = self._process_one_batch(seq_x, seq_y, seq_x_mark, seq_y_mark)
+        pred, _ = self._process_one_batch(pred_dataset, seq_x, seq_y, seq_x_mark, seq_y_mark)
+        
         preds.append(pred.detach().cpu().numpy())
 
         preds = np.array(preds)
+
         preds = preds.reshape(-1, preds.shape[-2], preds.shape[-1])
         
         return preds
 
-    def _process_one_batch(self, batch_x, batch_y, batch_x_mark, batch_y_mark):
+    def _process_one_batch(self, dataset, batch_x, batch_y, batch_x_mark, batch_y_mark):
         batch_x = batch_x.float().to(self.device)
         batch_y = batch_y.float()
 
@@ -235,6 +250,9 @@ class Exp_Informer(Exp_Basic):
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)[0]
             else:
                 outputs = self.model(batch_x, batch_x_mark, dec_inp, batch_y_mark)
+
+        if self.args.inverse:
+            outputs = dataset.scaler.inverse_transform(outputs)
         
         f_dim = -1 if self.args.features=='MS' else 0
         batch_y = batch_y[:,-self.args.pred_len:,f_dim:].to(self.device)
